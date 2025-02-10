@@ -1,3 +1,7 @@
+if (!globalThis.crypto) {
+  globalThis.crypto = require('crypto');
+}
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
