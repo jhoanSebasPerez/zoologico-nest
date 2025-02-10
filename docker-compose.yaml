@@ -1,0 +1,50 @@
+version: '3'
+services:
+  db:
+    image: postgres:17.2
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+  backend:
+    container_name: backend
+    build: .
+    expose:
+      - "3000"
+    networks:
+      - dockernet
+  nginx:
+    image: nginx:1.15-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./data/nginx:/etc/nginx/conf.d
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+    # if your service is running outside of docker uncomment this and comment out networks section
+    #network_mode: bridge
+    networks:
+      - dockernet
+  certbot:
+    image: certbot/certbot
+    restart: unless-stopped
+    volumes:
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    # if your service is running outside of docker uncomment this and comment out networks section
+    #network_mode: bridge
+    networks:
+      - dockernet
+# if your service is running outside of docker comment out networks section
+networks:
+  dockernet:
+    external: true
