@@ -40,4 +40,4 @@ services:
 # if your service is running outside of docker comment out networks section
 networks:
   dockernet:
-    external: true
+    driver: bridge
