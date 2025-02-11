@@ -20,6 +20,8 @@ services:
     command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
     # if your service is running outside of docker uncomment this and comment out networks section
     #network_mode: bridge
+    depends_on:
+      - backend
     networks:
       - dockernet
   certbot:
