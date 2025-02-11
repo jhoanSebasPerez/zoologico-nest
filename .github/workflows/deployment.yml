@@ -24,8 +24,6 @@ jobs:
           echo "POSTGRES_SCHEMA=${{ secrets.POSTGRES_SCHEMA }}" >> .env
       - name: Build docker_compose
         run: docker-compose up -d --build
-      - name: Build application
-        run: docker-compose exec -T service yarn build
   deploy:
     needs: build
     runs-on: ubuntu-latest
