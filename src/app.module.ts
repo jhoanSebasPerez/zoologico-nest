@@ -39,11 +39,15 @@ import { ImportsModule } from './imports/imports.module';
         port: parseInt(process.env.DB_PORT ?? '5432', 10),
         username: process.env.POSTGRES_USER,
         password: process.env.POSTGRES_PASSWORD,
+        schema: process.env.POSTGRES_SCHEMA,
         database: process.env.POSTGRES_DB,
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: true,
-        logging: true,
-        logger: 'advanced-console',
+        extra: {
+          ssl: {
+            rejectUnauthorized: false,
+          },
+        },
       }),
     }),
     AuthModule,

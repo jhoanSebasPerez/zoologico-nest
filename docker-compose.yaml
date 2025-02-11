@@ -1,31 +1,10 @@
 version: '3'
 services:
-  db:
-    image: postgres:17
-    restart: always
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    volumes:
-      - ./postgres:/var/lib/postgresql/data
-    ports:
-      - 5432:5432
-    networks:
-      - dockernet
   backend:
     container_name: backend
     build: .
     expose:
       - "3000"
-    environment:
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-      PORT: 3000
-      JWT_SECRET: ${JWT_SECRET}
     networks:
       - dockernet
   nginx:
