@@ -1,20 +1,156 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 import * as ExcelJS from 'exceljs';
 import * as fs from 'fs';
 import { Zone } from '../zones/entities/zone.entity';
 import { Species } from '../species/entities/species.entity';
 import { Animal } from '../animals/entities/animal.entity';
+import { User } from 'src/auth/entities/user.entity';
 
 @Injectable()
-export class ImportsService {
+export class ImportsService implements OnModuleInit {
   constructor(
+    @InjectRepository(User) private readonly userRepository: Repository<User>,
     @InjectRepository(Zone) private readonly zoneRepository: Repository<Zone>,
     @InjectRepository(Species) private readonly speciesRepository: Repository<Species>,
     @InjectRepository(Animal) private readonly animalRepository: Repository<Animal>,
     private readonly dataSource: DataSource
   ) { }
+
+  async onModuleInit() {
+    await this.seedDatabase();
+  }
+
+  private async seedDatabase() {
+    const userCount = await this.userRepository.count();
+    const zoneCount = await this.zoneRepository.count();
+    const speciesCount = await this.speciesRepository.count();
+    const animalCount = await this.animalRepository.count();
+
+    if (userCount === 0) {
+      await this.seedUsers();
+    } else {
+      console.log('Usuarios ya existen en la base de datos. Seeder no ejecutado para usuarios.');
+    }
+
+    if (zoneCount === 0 && speciesCount === 0 && animalCount === 0) {
+      await this.seedZonesSpeciesAnimals();
+    } else {
+      console.log('Zonas, especies o animales ya existen en la base de datos. Seeder no ejecutado para estos datos.');
+    }
+
+    if (userCount > 0 && (zoneCount > 0 || speciesCount > 0 || animalCount > 0)) {
+      console.log('La base de datos ya contiene datos. Seeder no ejecutado.');
+    } else {
+      console.log('Seeding completado.');
+    }
+  }
+
+  private async seedUsers() {
+    const users = [
+      {
+        email: 'admin@zoologico.com',
+        fullName: 'Admin Zoológico',
+        password: await bcrypt.hash('admin123', 10),
+        roles: ['admin'],
+        isActive: true
+      },
+      {
+        email: 'empleado1@zoologico.com',
+        fullName: 'Empleado Uno',
+        password: await bcrypt.hash('empleado123', 10),
+        roles: ['employee'],
+        isActive: true
+      },
+      {
+        email: 'empleado2@zoologico.com',
+        fullName: 'Empleado Dos',
+        password: await bcrypt.hash('empleado123', 10),
+        roles: ['employee'],
+        isActive: true
+      }
+    ];
+
+    for (const user of users) {
+      const existingUser = await this.userRepository.findOne({ where: { email: user.email } });
+      if (!existingUser) {
+        await this.userRepository.save(user);
+      }
+    }
+    console.log('Usuarios insertados correctamente.');
+  }
+
+  private async seedZonesSpeciesAnimals() {
+    const zonesData = [
+      {
+        name: 'Zona Tropical',
+        species: [
+          {
+            name: 'Tucán',
+            animals: ['Tucán Toño', 'Tucán Tina']
+          },
+          {
+            name: 'Jaguar',
+            animals: ['Jaguar Jairo', 'Jaguar Julia']
+          }
+        ]
+      },
+      {
+        name: 'Zona Desértica',
+        species: [
+          {
+            name: 'Camello',
+            animals: ['Camello Carlos', 'Camello Carla']
+          },
+          {
+            name: 'Lagarto de Gila',
+            animals: ['Lagarto Larry', 'Lagarto Laura']
+          }
+        ]
+      },
+      {
+        name: 'Zona Acuática',
+        species: [
+          {
+            name: 'Delfín',
+            animals: ['Delfín Dolly', 'Delfín Diego']
+          },
+          {
+            name: 'Tiburón Blanco',
+            animals: ['Tiburón Tom', 'Tiburón Tina']
+          }
+        ]
+      }
+    ];
+
+    for (const zoneData of zonesData) {
+      let zone = await this.zoneRepository.findOne({ where: { name: zoneData.name } });
+      if (!zone) {
+        zone = this.zoneRepository.create({ name: zoneData.name });
+        await this.zoneRepository.save(zone);
+      }
+
+      for (const speciesData of zoneData.species) {
+        let species = await this.speciesRepository.findOne({ where: { name: speciesData.name, zone: { id: zone.id } } });
+        if (!species) {
+          species = this.speciesRepository.create({ name: speciesData.name, zone });
+          await this.speciesRepository.save(species);
+        }
+
+        for (const animalName of speciesData.animals) {
+          const existingAnimal = await this.animalRepository.findOne({ where: { name: animalName, specie: { id: species.id } } });
+          if (!existingAnimal) {
+            const animal = this.animalRepository.create({ name: animalName, specie: species });
+            await this.animalRepository.save(animal);
+          }
+        }
+      }
+    }
+
+    console.log('Zonas, especies y animales insertados correctamente.');
+  }
 
   async importDataFromExcel(filePath: string) {
     const workbook = new ExcelJS.Workbook();
