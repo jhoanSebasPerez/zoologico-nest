@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, OnModuleInit } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -10,7 +10,7 @@ import { Animal } from '../animals/entities/animal.entity';
 import { User } from 'src/auth/entities/user.entity';
 
 @Injectable()
-export class ImportsService implements OnModuleInit {
+export class ImportsService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     @InjectRepository(Zone) private readonly zoneRepository: Repository<Zone>,
@@ -19,11 +19,7 @@ export class ImportsService implements OnModuleInit {
     private readonly dataSource: DataSource
   ) { }
 
-  async onModuleInit() {
-    await this.seedDatabase();
-  }
-
-  private async seedDatabase() {
+  public async seedDatabase() {
     const userCount = await this.userRepository.count();
     const zoneCount = await this.zoneRepository.count();
     const speciesCount = await this.speciesRepository.count();
