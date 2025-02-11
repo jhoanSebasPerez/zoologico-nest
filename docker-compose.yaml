@@ -5,6 +5,8 @@ services:
     build: .
     expose:
       - "3000"
+    env_file:
+      - .env
     networks:
       - dockernet
   nginx:

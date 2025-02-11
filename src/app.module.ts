@@ -28,6 +28,7 @@ import { ImportsModule } from './imports/imports.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '.env',
     }),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'assets'),
